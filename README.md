@@ -6,6 +6,8 @@ This PortSwigger lab uses a **tracking cookie** in a backend SQL query.
 The response never exposes database output — instead, it shows a **Welcome back** message *only when the SQL condition is true*.
 We exploit this boolean behaviour to extract the **administrator’s password, character by character**, and finally log in.
 
+[Lab Link](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses) <br/>
+
 ![Cover](Blind_SQLi/Cover.jpeg)
 
 ---
