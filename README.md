@@ -45,8 +45,6 @@ Let’s break it down with screenshots.
 
 # 🧬 Step-By-Step PoC (Screenshots Included)
 
----
-
 ## **1. Open the Lab and Select a Filter like Pets**
 
 Captured the request to identify cookies.
